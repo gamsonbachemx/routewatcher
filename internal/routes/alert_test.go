@@ -73,3 +73,21 @@ func TestDefaultAlertConfig(t *testing.T) {
 		t.Error("expected non-nil Output in DefaultAlertConfig")
 	}
 }
+
+func TestAlerter_NoAlertOnEmptyDiff(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := AlertConfig{
+		MinChanges: 1,
+		Level:      AlertWarning,
+		Output:     &buf,
+	}
+	a := NewAlerter(cfg)
+	d := Diff{
+		Added:   []Route{},
+		Removed: []Route{},
+	}
+	a.Notify(d)
+	if buf.Len() != 0 {
+		t.Errorf("expected no output for empty diff, got: %s", buf.String())
+	}
+}
