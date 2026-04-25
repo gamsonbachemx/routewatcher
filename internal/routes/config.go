@@ -2,49 +2,66 @@ package routes
 
 import (
 	"flag"
-	"strings"
+	"fmt"
+	"os"
 	"time"
 )
-
-// Config holds all runtime configuration for routewatcher.
-type Config struct {
-	Interval     time.Duration
-	OutputFormat string
-	Filter       *Filter
-}
 
 // multiStringFlag allows a flag to be specified multiple times.
 type multiStringFlag []string
 
-func (m *multiStringFlag) String() string  { return strings.Join(*m, ",") }
-func (m *multiStringFlag) Set(v string) error { *m = append(*m, v); return nil }
+func (m *multiStringFlag) String() string {
+	return fmt.Sprintf("%v", *m)
+}
 
-// ParseFlags reads CLI flags and returns a populated Config.
-func ParseFlags() *Config {
-	var (
-		interval     = flag.Duration("interval", 5*time.Second, "polling interval (e.g. 5s, 1m)")
-		format       = flag.String("format", "text", "output format: text or json")
-		excludeLocal = flag.Bool("exclude-local", false, "exclude local/loopback routes")
-		ifaces       multiStringFlag
-		protos       multiStringFlag
-	)
+func (m *multiStringFlag) Set(v string) error {
+	*m = append(*m, v)
+	return nil
+}
 
-	flag.Var(&ifaces, "iface", "filter by interface name (repeatable)")
-	flag.Var(&protos, "proto", "filter by protocol (repeatable)")
+// Config holds all CLI configuration for routewatcher.
+type Config struct {
+	Interval   time.Duration
+	Format     string
+	Interfaces multiStringFlag
+	Protocols  multiStringFlag
+	ExcludeLocal bool
+	// Alert settings
+	AlertEnabled    bool
+	AlertMinChanges int
+	AlertLevel      AlertLevel
+}
+
+// ParseFlags parses command-line flags into a Config.
+func ParseFlags() Config {
+	cfg := Config{}
+
+	flag.DurationVar(&cfg.Interval, "interval", 5*time.Second, "polling interval")
+	flag.StringVar(&cfg.Format, "format", "text", "output format: text or json")
+	flag.BoolVar(&cfg.ExcludeLocal, "exclude-local", false, "exclude local/loopback routes")
+	flag.Var(&cfg.Interfaces, "iface", "filter by interface (repeatable)")
+	flag.Var(&cfg.Protocols, "proto", "filter by protocol (repeatable)")
+
+	// Alert flags
+	flag.BoolVar(&cfg.AlertEnabled, "alert", false, "enable alerting on route changes")
+	flag.IntVar(&cfg.AlertMinChanges, "alert-min-changes", 1, "minimum changes to trigger alert")
+	alertLevel := flag.String("alert-level", "WARNING", "alert severity level: INFO, WARNING, CRITICAL")
+
 	flag.Parse()
 
-	var f *Filter
-	if *excludeLocal || len(ifaces) > 0 || len(protos) > 0 {
-		f = &Filter{
-			ExcludeLocal: *excludeLocal,
-			Interfaces:   []string(ifaces),
-			Protocols:    []string(protos),
-		}
-	}
+	cfg.AlertLevel = AlertLevel(*alertLevel)
+	return cfg
+}
 
-	return &Config{
-		Interval:     *interval,
-		OutputFormat: *format,
-		Filter:       f,
+// NewAlerterFromConfig builds an Alerter from the alert-related Config fields.
+// Returns nil if alerting is disabled.
+func NewAlerterFromConfig(cfg Config) *Alerter {
+	if !cfg.AlertEnabled {
+		return nil
 	}
+	return NewAlerter(AlertConfig{
+		MinChanges: cfg.AlertMinChanges,
+		Level:      cfg.AlertLevel,
+		Output:     os.Stderr,
+	})
 }
