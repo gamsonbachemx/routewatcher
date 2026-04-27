@@ -65,5 +65,9 @@ func (e *Exporter) Write(d Diff) error {
 			return fmt.Errorf("writing text export: %w", err)
 		}
 	}
+
+	if err := f.Sync(); err != nil {
+		return fmt.Errorf("syncing export file: %w", err)
+	}
 	return nil
 }
