@@ -94,3 +94,15 @@ func TestLoadHistory_MalformedLine(t *testing.T) {
 		t.Error("expected error for malformed JSON line")
 	}
 }
+
+func TestLoadHistory_EmptyFile(t *testing.T) {
+	path := writeHistoryFile(t, []HistoryEntry{})
+
+	got, err := LoadHistory(path, ReplayOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error for empty file: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected 0 entries for empty file, got %d", len(got))
+	}
+}
