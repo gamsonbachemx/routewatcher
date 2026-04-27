@@ -62,3 +62,18 @@ func TestRateLimiter_WithWatcher(t *testing.T) {
 		t.Error("expected event to be allowed after window reset")
 	}
 }
+
+// TestRateLimiter_ZeroMaxEvents verifies that a rate limiter configured with
+// zero MaxEvents blocks all events immediately.
+func TestRateLimiter_ZeroMaxEvents(t *testing.T) {
+	rl := NewRateLimiter(RateLimitConfig{
+		MaxEvents: 0,
+		Window:    time.Second,
+	})
+
+	for i := 0; i < 5; i++ {
+		if rl.Allow() {
+			t.Errorf("event %d was allowed, expected all events to be blocked with MaxEvents=0", i)
+		}
+	}
+}
