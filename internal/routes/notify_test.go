@@ -86,3 +86,16 @@ func TestNotifier_Send_NonOKStatus(t *testing.T) {
 		t.Fatal("expected error for non-2xx status")
 	}
 }
+
+func TestNotifier_Send_Timeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(200 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	n, _ := NewNotifier(WebhookConfig{URL: server.URL, Timeout: 50 * time.Millisecond})
+	if err := n.Send("host", Diff{}); err == nil {
+		t.Fatal("expected error due to client timeout")
+	}
+}
