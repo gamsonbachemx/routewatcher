@@ -102,3 +102,21 @@ func TestHealthMonitor_Print(t *testing.T) {
 		t.Errorf("expected 'OK' in output, got: %s", out)
 	}
 }
+
+func TestHealthMonitor_PrintDegraded(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := DefaultHealthConfig()
+	cfg.Output = &buf
+	cfg.MaxErrors = 1
+	h := NewHealthMonitor(cfg)
+	h.RecordError(errors.New("something went wrong"))
+	h.Print()
+
+	out := buf.String()
+	if !strings.Contains(out, "DEGRADED") {
+		t.Errorf("expected 'DEGRADED' in output, got: %s", out)
+	}
+	if !strings.Contains(out, "something went wrong") {
+		t.Errorf("expected error message in output, got: %s", out)
+	}
+}
