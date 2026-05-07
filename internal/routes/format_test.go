@@ -46,6 +46,14 @@ func TestDiff_Events(t *testing.T) {
 	}
 }
 
+func TestDiff_Events_Empty(t *testing.T) {
+	d := Diff{At: testTime}
+	events := d.Events()
+	if len(events) != 0 {
+		t.Errorf("expected 0 events for empty diff, got %d", len(events))
+	}
+}
+
 func TestFormatText_WithChanges(t *testing.T) {
 	d := &Diff{
 		Added:   []string{"192.168.1.0/24"},
