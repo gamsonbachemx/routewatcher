@@ -94,6 +94,13 @@ func (r *Rollup) Flush() {
 	r.out(batch)
 }
 
+// Len returns the number of diffs currently buffered in the rollup.
+func (r *Rollup) Len() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return len(r.buf)
+}
+
 // FormatRollup returns a human-readable summary of a batch of diffs.
 func FormatRollup(batch []Diff) string {
 	if len(batch) == 0 {
