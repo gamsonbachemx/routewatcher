@@ -59,6 +59,16 @@ func TestSchemaValidator_ValidateSnapshot(t *testing.T) {
 	}
 }
 
+func TestSchemaValidator_ValidateSnapshot_Empty(t *testing.T) {
+	// An empty snapshot should produce no validation errors.
+	v := NewSchemaValidator(DefaultSchemaConfig())
+	s := Snapshot{Routes: []Route{}}
+	errs := v.ValidateSnapshot(s)
+	if len(errs) != 0 {
+		t.Errorf("expected 0 validation errors for empty snapshot, got %d", len(errs))
+	}
+}
+
 func TestSchemaValidator_CustomRequiredFields(t *testing.T) {
 	cfg := SchemaConfig{RequiredFields: []string{"protocol"}}
 	v := NewSchemaValidator(cfg)
